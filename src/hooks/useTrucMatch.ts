@@ -373,6 +373,7 @@ export function useTrucMatch(options: UseTrucMatchOptions = {}) {
    * company, la consumim per resoldre el "await" corresponent.
    */
   const notifyChatPhrase = useCallback((player: PlayerId, phraseId: ChatPhraseId) => {
+    if (pausedRef.current) return;
     // Registra la frase a la història per ronda (mode sincer).
     recordChatPhrase(player, phraseId);
     // 1) Resposta a una consulta del bot (preguntes tipus "puc-anar?").
