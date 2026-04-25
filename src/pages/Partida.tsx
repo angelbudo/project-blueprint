@@ -4,6 +4,8 @@ import { ClientOnly } from "@/components/ClientOnly";
 import { useTrucMatch, clearSavedMatch } from "@/hooks/useTrucMatch";
 import { usePlayerChat } from "@/hooks/usePlayerChat";
 import { TrucBoard } from "@/components/truc/TrucBoard";
+import { TableChat } from "@/components/truc/TableChat";
+import type { RoomTextMessage } from "@/online/useRoomTextChat";
 import type { PlayerId } from "@/game/types";
 import { cardStrength, playerTotalEnvit } from "@/game/deck";
 import type { ChatPhraseId } from "@/game/phrases";
@@ -48,6 +50,25 @@ function PartidaClient() {
   const tuning = applyDifficulty(rawTuning, settings.botDifficulty);
   const bluffRate = bluffRateOf(settings.botHonesty);
   const [paused, setPaused] = useState(false);
+  // Xat de text local (només l'humà escriu; els bots no participen).
+  const [textMessages, setTextMessages] = useState<RoomTextMessage[]>([]);
+  const handleSendText = async (text: string) => {
+    setTextMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now() + Math.random(),
+        seat: HUMAN,
+        text,
+        createdAt: Date.now(),
+      },
+    ]);
+  };
+  const seatNamesBySeat: Record<PlayerId, string> = {
+    0: "Tu",
+    1: "Bot Esq.",
+    2: "Company",
+    3: "Bot Dre.",
+  };
   const {
     match,
     dispatch,
@@ -286,6 +307,14 @@ function PartidaClient() {
       turnTimeoutSec={settings.turnTimeoutSec}
       paused={paused}
       onPauseToggle={(next) => setPaused(next)}
+      belowHandSlot={
+        <TableChat
+          messages={textMessages}
+          mySeat={HUMAN}
+          seatNames={seatNamesBySeat}
+          onSend={handleSendText}
+        />
+      }
     />
   );
 }
