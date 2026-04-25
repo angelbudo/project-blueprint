@@ -53,6 +53,7 @@ function PartidaClient() {
   // Xat de text local (només l'humà escriu; els bots no participen).
   const [textMessages, setTextMessages] = useState<RoomTextMessage[]>([]);
   const handleSendText = async (text: string) => {
+    if (paused) return;
     setTextMessages((prev) => [
       ...prev,
       {
@@ -313,6 +314,7 @@ function PartidaClient() {
           mySeat={HUMAN}
           seatNames={seatNamesBySeat}
           onSend={handleSendText}
+          disabled={paused}
         />
       }
     />
