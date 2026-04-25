@@ -9,6 +9,7 @@
  * a `useTrucMatch` (només offline) perquè depèn d'una preferència local.
  */
 import { useEffect, useRef, useState } from "react";
+import { computeShoutDisplay } from "./shoutDisplay";
 import type { MatchState, PlayerId, ShoutKind } from "./types";
 
 export interface ShoutFlash {
@@ -39,7 +40,11 @@ export function useShoutFlash(match: MatchState | null): ShoutFlash | null {
     lastSeenIdxRef.current = lastShoutIdx;
     const ev = log[lastShoutIdx];
     if (ev.type !== "shout") return;
-    setFlash({ player: ev.player, what: ev.what });
+    // Recupera el label override ("Truc i passe!", etc.) des de la mateixa
+    // font que els carteles persistents, perquè el flash digui el mateix.
+    const display = computeShoutDisplay(match);
+    const labelOverride = display.shoutLabelByPlayer[ev.player] ?? undefined;
+    setFlash({ player: ev.player, what: ev.what, labelOverride });
     if (!QUESTION_SHOUTS.has(ev.what)) {
       if (timerRef.current != null) window.clearTimeout(timerRef.current);
       timerRef.current = window.setTimeout(() => {
