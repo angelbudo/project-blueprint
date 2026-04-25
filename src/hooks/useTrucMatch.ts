@@ -290,38 +290,18 @@ export function useTrucMatch(options: UseTrucMatchOptions = {}) {
     }
   }, [match.history.length]);
   const [shoutFlash, setShoutFlash] = useState<{ player: PlayerId; what: string; labelOverride?: string } | null>(null);
-  const [lastShoutByPlayer, setLastShoutByPlayer] = useState<Record<PlayerId, ShoutKind | null>>({
-    0: null, 1: null, 2: null, 3: null,
-  });
-  const [shoutLabelByPlayer, setShoutLabelByPlayer] = useState<Record<PlayerId, string | null>>({
-    0: null, 1: null, 2: null, 3: null,
-  });
-  /** Marca quins jugadors tenen el seu cant ja "acceptat" (vull): el badge
-   *  segueix visible però sense efecte de pulsació d'espera. */
-  const [acceptedShoutByPlayer, setAcceptedShoutByPlayer] = useState<Record<PlayerId, boolean>>({
-    0: false, 1: false, 2: false, 3: false,
-  });
-  /** Família del darrer cant per a cada jugador ("envit" o "truc"). Permet
-   *  posicionar el cartell amunt (envit) o avall (truc) del seu seient
-   *  encara que el text actual sigui una resposta com "vull" o "no-vull". */
-  const [shoutFamilyByPlayer, setShoutFamilyByPlayer] = useState<Record<PlayerId, "envit" | "truc" | null>>({
-    0: null, 1: null, 2: null, 3: null,
-  });
-  /** Cartell persistent "Envit" per al jugador que ha cantat envit (o renvit /
-   *  falta-envit). Es manté visible fins que comença una nova mà.
-   *  outcome: "pending" abans de respondre, "volgut" si l'han volgut, "no-volgut" si no. */
-  const [envitOutcomeByPlayer, setEnvitOutcomeByPlayer] = useState<
-    Record<PlayerId, { outcome: "pending" | "volgut" | "no-volgut" } | null>
-  >({ 0: null, 1: null, 2: null, 3: null });
-  /** Cartell persistent "Envit!" (o "Renvit!" / "Falta envit!") per al jugador
-   *  que ha cantat envit. És totalment independent de `lastShoutByPlayer`
-   *  (que gestiona el cartell del truc). Es manté visible fins la nova mà. */
-  const [envitShoutByPlayer, setEnvitShoutByPlayer] = useState<Record<PlayerId, ShoutKind | null>>({
-    0: null, 1: null, 2: null, 3: null,
-  });
-  const [envitShoutLabelByPlayer, setEnvitShoutLabelByPlayer] = useState<Record<PlayerId, string | null>>({
-    0: null, 1: null, 2: null, 3: null,
-  });
+  // Tots els carteles (truc, envit, V/X, família, acceptat) es deriven del
+  // `MatchState` via `computeShoutDisplay`. Així offline i online comparteixen
+  // exactament la mateixa font de veritat — qualsevol canvi visual fet ací
+  // es reflecteix automàticament en les partides online.
+  const display = useMemo(() => computeShoutDisplay(match), [match]);
+  const lastShoutByPlayer = display.lastShoutByPlayer;
+  const shoutLabelByPlayer = display.shoutLabelByPlayer;
+  const acceptedShoutByPlayer = display.acceptedShoutByPlayer;
+  const shoutFamilyByPlayer = display.shoutFamilyByPlayer;
+  const envitShoutByPlayer = display.envitShoutByPlayer;
+  const envitShoutLabelByPlayer = display.envitShoutLabelByPlayer;
+  const envitOutcomeByPlayer = display.envitOutcomeByPlayer;
   const shoutTimersRef = useRef<Record<PlayerId, number | null>>({ 0: null, 1: null, 2: null, 3: null });
   const timerRef = useRef<number | null>(null);
   const consultTimersRef = useRef<number[]>([]);
