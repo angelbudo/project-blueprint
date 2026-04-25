@@ -307,6 +307,14 @@ function PartidaClient() {
       turnTimeoutSec={settings.turnTimeoutSec}
       paused={paused}
       onPauseToggle={(next) => setPaused(next)}
+      belowHandSlot={
+        <TableChat
+          messages={textMessages}
+          mySeat={HUMAN}
+          seatNames={seatNamesBySeat}
+          onSend={handleSendText}
+        />
+      }
     />
   );
 }
