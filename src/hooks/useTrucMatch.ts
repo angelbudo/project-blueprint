@@ -373,6 +373,7 @@ export function useTrucMatch(options: UseTrucMatchOptions = {}) {
    * company, la consumim per resoldre el "await" corresponent.
    */
   const notifyChatPhrase = useCallback((player: PlayerId, phraseId: ChatPhraseId) => {
+    if (pausedRef.current) return;
     // Registra la frase a la història per ronda (mode sincer).
     recordChatPhrase(player, phraseId);
     // 1) Resposta a una consulta del bot (preguntes tipus "puc-anar?").
@@ -411,6 +412,11 @@ export function useTrucMatch(options: UseTrucMatchOptions = {}) {
   useEffect(() => { matchRef.current = match; }, [match]);
 
   const dispatch = useCallback((player: PlayerId, action: Action) => {
+    // Mentre la partida està en pausa, ignora qualsevol acció (inclòs
+    // l'humà). L'overlay ja bloqueja clics, però aquesta guarda evita
+    // que entrades programàtiques (teclat, eines de debug, etc.) puguin
+    // colar-se i avançar l'estat.
+    if (pausedRef.current) return;
     // Track human plays for the adaptive profile.
     if (player === HUMAN && action.type === "shout") {
       const track = trackProfileRef.current;
