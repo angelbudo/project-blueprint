@@ -13,12 +13,14 @@ interface TableChatProps {
   mySeat: PlayerId;
   seatNames: Record<PlayerId, string>;
   onSend: (text: string) => Promise<void>;
+  /** Si és true, deshabilita l'input i el botó d'enviar (p.ex. en pausa). */
+  disabled?: boolean;
 }
 
 /** Mini-xat de text lliure que s'incrusta sota les cartes del jugador.
  *  Pensat per a la mesa online — manté l'historial visible i un input
  *  amb límit de 200 caràcters. Auto-scroll al darrer missatge. */
-export function TableChat({ messages, mySeat, seatNames, onSend }: TableChatProps) {
+export function TableChat({ messages, mySeat, seatNames, onSend, disabled = false }: TableChatProps) {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -30,6 +32,7 @@ export function TableChat({ messages, mySeat, seatNames, onSend }: TableChatProp
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (disabled) return;
     const trimmed = text.trim();
     if (!trimmed || sending) return;
     setSending(true);
@@ -80,9 +83,9 @@ export function TableChat({ messages, mySeat, seatNames, onSend }: TableChatProp
         <Input
           value={text}
           onChange={(e) => setText(e.target.value.slice(0, MAX_LEN))}
-          placeholder="Escriu un missatge…"
+          placeholder={disabled ? "Partida pausada…" : "Escriu un missatge…"}
           maxLength={MAX_LEN}
-          disabled={sending}
+          disabled={sending || disabled}
           className="h-8 text-xs flex-1 bg-background/80"
           aria-label="Missatge"
         />
@@ -90,7 +93,7 @@ export function TableChat({ messages, mySeat, seatNames, onSend }: TableChatProp
           type="submit"
           size="sm"
           variant="default"
-          disabled={sending || !text.trim()}
+          disabled={sending || disabled || !text.trim()}
           className="h-8 w-8 p-0 shrink-0"
           aria-label="Enviar"
         >
