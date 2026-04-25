@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Action, MatchState, PlayerId, ShoutKind, partnerOf, nextPlayer, teamOf } from "@/game/types";
 import { applyAction, createMatch, dealRound, legalActions, startNextRound } from "@/game/engine";
 import { botDecide } from "@/game/bot";
 import { bestEnvit, playerTotalEnvit } from "@/game/deck";
+import { computeShoutDisplay } from "@/game/shoutDisplay";
 import {
   shouldConsultPartner,
   pickQuestion,
