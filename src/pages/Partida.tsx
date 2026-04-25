@@ -4,6 +4,8 @@ import { ClientOnly } from "@/components/ClientOnly";
 import { useTrucMatch, clearSavedMatch } from "@/hooks/useTrucMatch";
 import { usePlayerChat } from "@/hooks/usePlayerChat";
 import { TrucBoard } from "@/components/truc/TrucBoard";
+import { TableChat } from "@/components/truc/TableChat";
+import type { RoomTextMessage } from "@/online/useRoomTextChat";
 import type { PlayerId } from "@/game/types";
 import { cardStrength, playerTotalEnvit } from "@/game/deck";
 import type { ChatPhraseId } from "@/game/phrases";
