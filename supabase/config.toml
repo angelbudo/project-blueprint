@@ -1,1 +1,7 @@
 project_id = "dnuoudloealpoemreupl"
+
+[functions.rooms-rpc]
+verify_jwt = false
+
+[functions.player-profile]
+verify_jwt = false
