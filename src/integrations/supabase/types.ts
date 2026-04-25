@@ -14,16 +14,276 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      player_profiles: {
+        Row: {
+          accept_threshold: number
+          aggressiveness: number
+          bluff_rate: number
+          bot_difficulty: string
+          bot_honesty: string
+          created_at: string
+          device_id: string
+          envit_accepted: number
+          envit_called: number
+          envit_called_bluff: number
+          envit_rejected: number
+          envit_strength_n: number
+          envit_strength_sum: number
+          games_played: number
+          truc_accepted: number
+          truc_called: number
+          truc_called_bluff: number
+          truc_rejected: number
+          truc_strength_n: number
+          truc_strength_sum: number
+          updated_at: string
+        }
+        Insert: {
+          accept_threshold?: number
+          aggressiveness?: number
+          bluff_rate?: number
+          bot_difficulty?: string
+          bot_honesty?: string
+          created_at?: string
+          device_id: string
+          envit_accepted?: number
+          envit_called?: number
+          envit_called_bluff?: number
+          envit_rejected?: number
+          envit_strength_n?: number
+          envit_strength_sum?: number
+          games_played?: number
+          truc_accepted?: number
+          truc_called?: number
+          truc_called_bluff?: number
+          truc_rejected?: number
+          truc_strength_n?: number
+          truc_strength_sum?: number
+          updated_at?: string
+        }
+        Update: {
+          accept_threshold?: number
+          aggressiveness?: number
+          bluff_rate?: number
+          bot_difficulty?: string
+          bot_honesty?: string
+          created_at?: string
+          device_id?: string
+          envit_accepted?: number
+          envit_called?: number
+          envit_called_bluff?: number
+          envit_rejected?: number
+          envit_strength_n?: number
+          envit_strength_sum?: number
+          games_played?: number
+          truc_accepted?: number
+          truc_called?: number
+          truc_called_bluff?: number
+          truc_rejected?: number
+          truc_strength_n?: number
+          truc_strength_sum?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      room_actions: {
+        Row: {
+          action: Json
+          created_at: string
+          id: number
+          room_id: string
+          seat: number
+        }
+        Insert: {
+          action: Json
+          created_at?: string
+          id?: number
+          room_id: string
+          seat: number
+        }
+        Update: {
+          action?: Json
+          created_at?: string
+          id?: number
+          room_id?: string
+          seat?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_actions_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      room_chat: {
+        Row: {
+          created_at: string
+          id: number
+          phrase_id: string
+          room_id: string
+          seat: number
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          phrase_id: string
+          room_id: string
+          seat: number
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          phrase_id?: string
+          room_id?: string
+          seat?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_chat_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      room_players: {
+        Row: {
+          device_id: string
+          id: string
+          is_online: boolean
+          joined_at: string
+          last_seen: string
+          name: string
+          room_id: string
+          seat: number
+        }
+        Insert: {
+          device_id: string
+          id?: string
+          is_online?: boolean
+          joined_at?: string
+          last_seen?: string
+          name: string
+          room_id: string
+          seat: number
+        }
+        Update: {
+          device_id?: string
+          id?: string
+          is_online?: boolean
+          joined_at?: string
+          last_seen?: string
+          name?: string
+          room_id?: string
+          seat?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_players_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      room_text_chat: {
+        Row: {
+          created_at: string
+          device_id: string
+          id: number
+          room_id: string
+          seat: number
+          text: string
+        }
+        Insert: {
+          created_at?: string
+          device_id: string
+          id?: number
+          room_id: string
+          seat: number
+          text: string
+        }
+        Update: {
+          created_at?: string
+          device_id?: string
+          id?: number
+          room_id?: string
+          seat?: number
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_text_chat_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rooms: {
+        Row: {
+          bot_intents: Json
+          code: string
+          created_at: string
+          host_device: string
+          id: string
+          initial_mano: number
+          match_state: Json | null
+          paused_at: string | null
+          seat_kinds: Database["public"]["Enums"]["seat_kind"][]
+          status: Database["public"]["Enums"]["room_status"]
+          target_cames: number
+          turn_started_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          bot_intents?: Json
+          code: string
+          created_at?: string
+          host_device: string
+          id?: string
+          initial_mano?: number
+          match_state?: Json | null
+          paused_at?: string | null
+          seat_kinds: Database["public"]["Enums"]["seat_kind"][]
+          status?: Database["public"]["Enums"]["room_status"]
+          target_cames?: number
+          turn_started_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bot_intents?: Json
+          code?: string
+          created_at?: string
+          host_device?: string
+          id?: string
+          initial_mano?: number
+          match_state?: Json | null
+          paused_at?: string | null
+          seat_kinds?: Database["public"]["Enums"]["seat_kind"][]
+          status?: Database["public"]["Enums"]["room_status"]
+          target_cames?: number
+          turn_started_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      cleanup_rooms: { Args: never; Returns: Json }
     }
     Enums: {
-      [_ in never]: never
+      room_status: "lobby" | "playing" | "finished" | "abandoned"
+      seat_kind: "human" | "bot" | "empty"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +410,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      room_status: ["lobby", "playing", "finished", "abandoned"],
+      seat_kind: ["human", "bot", "empty"],
+    },
   },
 } as const
