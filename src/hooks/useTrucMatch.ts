@@ -98,6 +98,9 @@ interface UseTrucMatchOptions {
    * per a forçar un flush del perfil del jugador i recalcular el tuning del
    * bot abans de la ronda següent. */
   onRoundEnd?: () => void;
+  /** Si és true, congela qualsevol acció dels bots (no programa torns ni
+   *  passa a nova ronda). El jugador humà també queda bloquejat per la UI. */
+  paused?: boolean;
 }
 
 const SAVE_KEY = "truc:save:v2";
