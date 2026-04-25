@@ -671,6 +671,7 @@ export function useTrucMatch(options: UseTrucMatchOptions = {}) {
       window.clearTimeout(timerRef.current);
       timerRef.current = null;
     }
+    if (pausedRef.current) return;
     const r = match.round;
     if (r.phase === "game-end" || r.phase === "round-end") return;
 
@@ -1175,9 +1176,10 @@ export function useTrucMatch(options: UseTrucMatchOptions = {}) {
     return () => {
       if (timerRef.current) window.clearTimeout(timerRef.current);
     };
-  }, [match, dispatch]);
+  }, [match, dispatch, options.paused]);
 
   useEffect(() => {
+    if (pausedRef.current) return;
     if (match.round.phase === "round-end") {
       // Si l'envit ha estat volgut, donem 3s extra per a la revelació de
       // les cartes d'envit abans de començar la nova mà.
@@ -1187,7 +1189,7 @@ export function useTrucMatch(options: UseTrucMatchOptions = {}) {
       const t = window.setTimeout(() => newRound(), delay);
       return () => window.clearTimeout(t);
     }
-  }, [match.round.phase, match.history, newRound]);
+  }, [match.round.phase, match.history, newRound, options.paused]);
 
   const humanActions = legalActions(match, HUMAN);
 
