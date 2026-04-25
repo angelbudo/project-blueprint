@@ -498,13 +498,6 @@ export function useTrucMatch(options: UseTrucMatchOptions = {}) {
       return next;
     });
     for (const p of [0, 1, 2, 3] as PlayerId[]) clearShoutTimer(p);
-    setLastShoutByPlayer({ 0: null, 1: null, 2: null, 3: null });
-    setShoutLabelByPlayer({ 0: null, 1: null, 2: null, 3: null });
-    setAcceptedShoutByPlayer({ 0: false, 1: false, 2: false, 3: false });
-    setShoutFamilyByPlayer({ 0: null, 1: null, 2: null, 3: null });
-    setEnvitOutcomeByPlayer({ 0: null, 1: null, 2: null, 3: null });
-    setEnvitShoutByPlayer({ 0: null, 1: null, 2: null, 3: null });
-    setEnvitShoutLabelByPlayer({ 0: null, 1: null, 2: null, 3: null });
     consultAdviceRef.current.clear();
     consultStartedRef.current.clear();
     clearConsultTimers();
@@ -523,13 +516,6 @@ export function useTrucMatch(options: UseTrucMatchOptions = {}) {
     if (forced !== null) forcedNextDealerRef.current = null;
     setMatch(createMatch({ targetCama: initialTargetCama, targetCames: initialTargetCames, firstDealer }));
     for (const p of [0, 1, 2, 3] as PlayerId[]) clearShoutTimer(p);
-    setLastShoutByPlayer({ 0: null, 1: null, 2: null, 3: null });
-    setShoutLabelByPlayer({ 0: null, 1: null, 2: null, 3: null });
-    setAcceptedShoutByPlayer({ 0: false, 1: false, 2: false, 3: false });
-    setShoutFamilyByPlayer({ 0: null, 1: null, 2: null, 3: null });
-    setEnvitOutcomeByPlayer({ 0: null, 1: null, 2: null, 3: null });
-    setEnvitShoutByPlayer({ 0: null, 1: null, 2: null, 3: null });
-    setEnvitShoutLabelByPlayer({ 0: null, 1: null, 2: null, 3: null });
     consultAdviceRef.current.clear();
     consultStartedRef.current.clear();
     clearConsultTimers();
