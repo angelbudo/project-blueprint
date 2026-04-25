@@ -4,6 +4,7 @@ import { applyAction, createMatch, dealRound, legalActions, startNextRound } fro
 import { botDecide } from "@/game/bot";
 import { bestEnvit, playerTotalEnvit } from "@/game/deck";
 import { computeShoutDisplay } from "@/game/shoutDisplay";
+import { useShoutFlash } from "@/game/useShoutFlash";
 import {
   shouldConsultPartner,
   pickQuestion,
@@ -289,7 +290,8 @@ export function useTrucMatch(options: UseTrucMatchOptions = {}) {
       selfCommitRef.current = { 0: {}, 1: {}, 2: {}, 3: {} };
     }
   }, [match.history.length]);
-  const [shoutFlash, setShoutFlash] = useState<{ player: PlayerId; what: string; labelOverride?: string } | null>(null);
+  // Flash transitori del cant: derivat del log via hook compartit amb online.
+  const shoutFlash = useShoutFlash(match);
   // Tots els carteles (truc, envit, V/X, família, acceptat) es deriven del
   // `MatchState` via `computeShoutDisplay`. Així offline i online comparteixen
   // exactament la mateixa font de veritat — qualsevol canvi visual fet ací
@@ -459,15 +461,9 @@ export function useTrucMatch(options: UseTrucMatchOptions = {}) {
         if (SPOKEN_SHOUTS.has(action.what)) {
           speakShout(action.what, labelOverride);
         }
-
-        // Flash transitori per animar el cant (1.6s). La resta dels
-        // carteles persistents (truc, envit, V/X, família, acceptat) es
-        // deriven automàticament de `match.round.log` via
-        // `computeShoutDisplay`. Vegeu `src/game/shoutDisplay.ts`.
-        setShoutFlash({ player, what: action.what, labelOverride });
-        if (!QUESTION_SHOUTS.has(action.what)) {
-          window.setTimeout(() => setShoutFlash(null), 1600);
-        }
+        // El flash transitori (1.6s) es deriva automàticament del log
+        // via `useShoutFlash`. La resta dels carteles persistents (truc,
+        // envit, V/X, família, acceptat) via `computeShoutDisplay`.
       }
       return next;
     });
