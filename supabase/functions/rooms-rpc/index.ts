@@ -685,6 +685,26 @@ const handlers: Record<string, (data: any) => Promise<unknown>> = {
       }
     }
 
+    // 1.b) Tancar partides "playing" sense cap humà online (tots han abandonat o
+    //      han perdut la connexió). Així la mesa queda lliure per a una nova partida.
+    const { data: playingRooms } = await admin
+      .from("rooms")
+      .select("id")
+      .eq("status", "playing");
+    for (const pr of (playingRooms ?? []) as { id: string }[]) {
+      const { data: humansOnline } = await admin
+        .from("room_players")
+        .select("device_id")
+        .eq("room_id", pr.id)
+        .eq("is_online", true);
+      if (!humansOnline || humansOnline.length === 0) {
+        await admin
+          .from("rooms")
+          .update({ status: "abandoned", updated_at: new Date().toISOString() })
+          .eq("id", pr.id);
+      }
+    }
+
     // 2) Garantir que sempre hi ha LOBBY_TABLES taules en lobby (les "oficials"). Omplim buits amb taules hostless.
     const { data: lobbyCount } = await admin
       .from("rooms")
