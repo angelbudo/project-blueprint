@@ -8,7 +8,8 @@ import { submitAction, sendChatPhrase, sendTextMessage, setPaused } from "@/onli
 import { useRoomChat } from "@/online/useRoomChat";
 import { useRoomTextChat } from "@/online/useRoomTextChat";
 import { legalActions } from "@/game/engine";
-import type { Action, MatchState, PlayerId, ShoutKind } from "@/game/types";
+import { computeShoutDisplay } from "@/game/shoutDisplay";
+import type { Action, MatchState, PlayerId } from "@/game/types";
 import type { ChatPhraseId } from "@/game/phrases";
 import { TrucBoard } from "@/components/truc/TrucBoard";
 import { TableChat } from "@/components/truc/TableChat";
@@ -33,8 +34,6 @@ export default function OnlinePartidaPage() {
   );
 }
 
-const EMPTY_LABELS: Record<PlayerId, string | null> = { 0: null, 1: null, 2: null, 3: null };
-
 function PartidaOnline() {
   const { codi = "" } = useParams<{ codi: string }>();
   const navigate = useNavigate();
@@ -58,24 +57,12 @@ function PartidaOnline() {
     [state, mySeat],
   );
 
-  const lastShoutByPlayer = useMemo<Record<PlayerId, ShoutKind | null>>(() => {
-    const acc: Record<PlayerId, ShoutKind | null> = { 0: null, 1: null, 2: null, 3: null };
-    if (!state) return acc;
-    for (const ev of state.round.log) {
-      if (ev.type === "shout") acc[ev.player] = ev.what;
-      if (ev.type === "trick-end") {
-        acc[0] = null; acc[1] = null; acc[2] = null; acc[3] = null;
-      }
-    }
-    return acc;
-  }, [state]);
-
-  const acceptedShoutByPlayer = useMemo<Record<PlayerId, boolean>>(() => {
-    const accepted = state
-      ? state.round.envitState.kind === "accepted" || state.round.trucState.kind === "accepted"
-      : false;
-    return { 0: accepted, 1: accepted, 2: accepted, 3: accepted };
-  }, [state]);
+  // Mateixa font de veritat que la partida offline: tots els carteles
+  // (truc, envit, V/X, família, acceptat) es deriven del MatchState.
+  const display = useMemo(
+    () => state ? computeShoutDisplay(state) : null,
+    [state],
+  );
 
   const seatNames = useMemo(() => {
     if (mySeat == null || !players || !seatKinds) {
@@ -205,9 +192,13 @@ function PartidaOnline() {
       humanActions={myActions}
       dispatch={dispatchAction}
       shoutFlash={null}
-      lastShoutByPlayer={lastShoutByPlayer}
-      shoutLabelByPlayer={EMPTY_LABELS}
-      acceptedShoutByPlayer={acceptedShoutByPlayer}
+      lastShoutByPlayer={display!.lastShoutByPlayer}
+      shoutLabelByPlayer={display!.shoutLabelByPlayer}
+      acceptedShoutByPlayer={display!.acceptedShoutByPlayer}
+      shoutFamilyByPlayer={display!.shoutFamilyByPlayer}
+      envitShoutByPlayer={display!.envitShoutByPlayer}
+      envitShoutLabelByPlayer={display!.envitShoutLabelByPlayer}
+      envitOutcomeByPlayer={display!.envitOutcomeByPlayer}
       messages={chatMessages}
       onSay={handleSay}
       onNewGame={() => navigate("/")}

@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Action, MatchState, PlayerId, ShoutKind, partnerOf, nextPlayer, teamOf } from "@/game/types";
 import { applyAction, createMatch, dealRound, legalActions, startNextRound } from "@/game/engine";
 import { botDecide } from "@/game/bot";
 import { bestEnvit, playerTotalEnvit } from "@/game/deck";
+import { computeShoutDisplay } from "@/game/shoutDisplay";
 import {
   shouldConsultPartner,
   pickQuestion,
@@ -289,38 +290,18 @@ export function useTrucMatch(options: UseTrucMatchOptions = {}) {
     }
   }, [match.history.length]);
   const [shoutFlash, setShoutFlash] = useState<{ player: PlayerId; what: string; labelOverride?: string } | null>(null);
-  const [lastShoutByPlayer, setLastShoutByPlayer] = useState<Record<PlayerId, ShoutKind | null>>({
-    0: null, 1: null, 2: null, 3: null,
-  });
-  const [shoutLabelByPlayer, setShoutLabelByPlayer] = useState<Record<PlayerId, string | null>>({
-    0: null, 1: null, 2: null, 3: null,
-  });
-  /** Marca quins jugadors tenen el seu cant ja "acceptat" (vull): el badge
-   *  segueix visible però sense efecte de pulsació d'espera. */
-  const [acceptedShoutByPlayer, setAcceptedShoutByPlayer] = useState<Record<PlayerId, boolean>>({
-    0: false, 1: false, 2: false, 3: false,
-  });
-  /** Família del darrer cant per a cada jugador ("envit" o "truc"). Permet
-   *  posicionar el cartell amunt (envit) o avall (truc) del seu seient
-   *  encara que el text actual sigui una resposta com "vull" o "no-vull". */
-  const [shoutFamilyByPlayer, setShoutFamilyByPlayer] = useState<Record<PlayerId, "envit" | "truc" | null>>({
-    0: null, 1: null, 2: null, 3: null,
-  });
-  /** Cartell persistent "Envit" per al jugador que ha cantat envit (o renvit /
-   *  falta-envit). Es manté visible fins que comença una nova mà.
-   *  outcome: "pending" abans de respondre, "volgut" si l'han volgut, "no-volgut" si no. */
-  const [envitOutcomeByPlayer, setEnvitOutcomeByPlayer] = useState<
-    Record<PlayerId, { outcome: "pending" | "volgut" | "no-volgut" } | null>
-  >({ 0: null, 1: null, 2: null, 3: null });
-  /** Cartell persistent "Envit!" (o "Renvit!" / "Falta envit!") per al jugador
-   *  que ha cantat envit. És totalment independent de `lastShoutByPlayer`
-   *  (que gestiona el cartell del truc). Es manté visible fins la nova mà. */
-  const [envitShoutByPlayer, setEnvitShoutByPlayer] = useState<Record<PlayerId, ShoutKind | null>>({
-    0: null, 1: null, 2: null, 3: null,
-  });
-  const [envitShoutLabelByPlayer, setEnvitShoutLabelByPlayer] = useState<Record<PlayerId, string | null>>({
-    0: null, 1: null, 2: null, 3: null,
-  });
+  // Tots els carteles (truc, envit, V/X, família, acceptat) es deriven del
+  // `MatchState` via `computeShoutDisplay`. Així offline i online comparteixen
+  // exactament la mateixa font de veritat — qualsevol canvi visual fet ací
+  // es reflecteix automàticament en les partides online.
+  const display = useMemo(() => computeShoutDisplay(match), [match]);
+  const lastShoutByPlayer = display.lastShoutByPlayer;
+  const shoutLabelByPlayer = display.shoutLabelByPlayer;
+  const acceptedShoutByPlayer = display.acceptedShoutByPlayer;
+  const shoutFamilyByPlayer = display.shoutFamilyByPlayer;
+  const envitShoutByPlayer = display.envitShoutByPlayer;
+  const envitShoutLabelByPlayer = display.envitShoutLabelByPlayer;
+  const envitOutcomeByPlayer = display.envitOutcomeByPlayer;
   const shoutTimersRef = useRef<Record<PlayerId, number | null>>({ 0: null, 1: null, 2: null, 3: null });
   const timerRef = useRef<number | null>(null);
   const consultTimersRef = useRef<number[]>([]);
@@ -474,156 +455,18 @@ export function useTrucMatch(options: UseTrucMatchOptions = {}) {
 
       const next = applyAction(prev, player, action);
       if (action.type === "shout") {
-        const isAcceptResponse = action.what === "vull";
-
         // Locuta el cant en veu alta (truc, envit, etc.).
         if (SPOKEN_SHOUTS.has(action.what)) {
           speakShout(action.what, labelOverride);
         }
 
-        // Quan es canta una nova "pregunta" (truc/envit/...), neteja
-        // l'estat d'acceptat de tothom.
-        if (QUESTION_SHOUTS.has(action.what)) {
-          setAcceptedShoutByPlayer({ 0: false, 1: false, 2: false, 3: false });
-        }
-
-        // Cartell persistent d'envit: quan algú canta envit/renvit/falta-envit,
-        // marca el seu cartell "Envit" com a pending. Si era una resposta amb
-        // renvit/falta-envit, també marca com a "volgut" el cantador previ del
-        // seu mateix bàndol (perquè acceptar amb renvit equival a "vull i pujar").
-        if (ENVIT_QUESTION_SHOUTS.has(action.what)) {
-          setEnvitOutcomeByPlayer((m) => {
-            const updated = { ...m };
-            // Si és renvit / falta-envit, qualsevol envit pendent passa a "volgut".
-            if (action.what === "renvit" || action.what === "falta-envit") {
-              for (const pid of [0, 1, 2, 3] as PlayerId[]) {
-                if (updated[pid]?.outcome === "pending") {
-                  updated[pid] = { outcome: "volgut" };
-                }
-              }
-            }
-            updated[player] = { outcome: "pending" };
-            return updated;
-          });
-          // Cartell d'envit independent: persisteix fins la nova mà i no es
-          // veu afectat per crits posteriors de truc.
-          setEnvitShoutByPlayer((m) => ({ ...m, [player]: action.what }));
-          setEnvitShoutLabelByPlayer((m) => ({ ...m, [player]: labelOverride ?? null }));
-        }
-        // Resposta a un envit pendent: vull / no-vull. Només actualitzem
-        // l'outcome quan l'envit ha quedat realment resolt (accepted/rejected
-        // a `next.round.envitState`). Així evitem marcar com a "no-volgut" un
-        // envit que encara podria acceptar el segon membre de l'equip.
-        if (action.what === "vull" || action.what === "no-vull") {
-          const envSt = next.round.envitState;
-          let result: "volgut" | "no-volgut" | null = null;
-          if (envSt.kind === "accepted") result = "volgut";
-          else if (envSt.kind === "rejected") result = "no-volgut";
-          if (result !== null) {
-            const finalResult = result;
-            setEnvitOutcomeByPlayer((m) => {
-              const updated = { ...m };
-              for (const pid of [0, 1, 2, 3] as PlayerId[]) {
-                if (updated[pid]?.outcome === "pending") {
-                  updated[pid] = { outcome: finalResult };
-                }
-              }
-              return updated;
-            });
-          }
-        }
-
-        // Família del cant per al jugador (envit / truc). Les respostes
-        // (vull / no-vull) hereten la família del cant pendent al qual responen.
-        setShoutFamilyByPlayer((m) => {
-          const updated = { ...m };
-          if (ENVIT_QUESTION_SHOUTS.has(action.what)) {
-            updated[player] = "envit";
-          } else if (
-            action.what === "truc" || action.what === "retruc" ||
-            action.what === "quatre" || action.what === "joc-fora"
-          ) {
-            updated[player] = "truc";
-          } else if (action.what === "vull" || action.what === "no-vull") {
-            let inherited: "envit" | "truc" | null = null;
-            for (const pid of [0, 1, 2, 3] as PlayerId[]) {
-              const cur = lastShoutByPlayer[pid];
-              if (cur && QUESTION_SHOUTS.has(cur)) {
-                inherited = ENVIT_QUESTION_SHOUTS.has(cur) ? "envit" : "truc";
-                break;
-              }
-            }
-            updated[player] = inherited;
-          }
-          return updated;
-        });
-
+        // Flash transitori per animar el cant (1.6s). La resta dels
+        // carteles persistents (truc, envit, V/X, família, acceptat) es
+        // deriven automàticament de `match.round.log` via
+        // `computeShoutDisplay`. Vegeu `src/game/shoutDisplay.ts`.
         setShoutFlash({ player, what: action.what, labelOverride });
         if (!QUESTION_SHOUTS.has(action.what)) {
           window.setTimeout(() => setShoutFlash(null), 1600);
-        }
-
-        // Determina si aquesta acció pertany a la família "envit" (cant
-        // d'envit/renvit/falta-envit, o resposta vull/no-vull a un envit
-        // pendent). En aquest cas, NO toquem `lastShoutByPlayer` (que només
-        // gestiona el cartell del truc) — el cartell d'envit és independent
-        // i viu a `envitShoutByPlayer`.
-        const isEnvitFamilyAction = (() => {
-          if (ENVIT_QUESTION_SHOUTS.has(action.what)) return true;
-          if (action.what === "vull" || action.what === "no-vull") {
-            // Hi ha algun envit pendent (sense resposta encara)?
-            for (const pid of [0, 1, 2, 3] as PlayerId[]) {
-              if (envitOutcomeByPlayer[pid]?.outcome === "pending") return true;
-            }
-          }
-          return false;
-        })();
-
-        if (!isEnvitFamilyAction) {
-          setLastShoutByPlayer((m) => {
-            const updated = { ...m };
-            if (RESPONSE_SHOUTS.has(action.what)) {
-              for (const pid of [0, 1, 2, 3] as PlayerId[]) {
-                const cur = updated[pid];
-                if (cur && QUESTION_SHOUTS.has(cur) && !ENVIT_QUESTION_SHOUTS.has(cur)) {
-                  if (isAcceptResponse) {
-                    // Truc acceptat: manté el cartell del cantador, però
-                    // marcat com a "acceptat" (sense pulsació d'espera).
-                    setAcceptedShoutByPlayer((acc) => ({ ...acc, [pid]: true }));
-                  } else {
-                    updated[pid] = null;
-                    clearShoutTimer(pid);
-                  }
-                }
-              }
-            }
-            updated[player] = action.what;
-            return updated;
-          });
-        }
-
-        if (!isEnvitFamilyAction) {
-          setShoutLabelByPlayer((m) => {
-            const updated = { ...m };
-            if (RESPONSE_SHOUTS.has(action.what)) {
-              for (const pid of [0, 1, 2, 3] as PlayerId[]) {
-                if (!isAcceptResponse) {
-                  updated[pid] = null;
-                }
-              }
-            }
-            updated[player] = labelOverride ?? null;
-            return updated;
-          });
-
-          clearShoutTimer(player);
-          if (!QUESTION_SHOUTS.has(action.what)) {
-            shoutTimersRef.current[player] = window.setTimeout(() => {
-              setLastShoutByPlayer((m) => ({ ...m, [player]: null }));
-              setShoutLabelByPlayer((m) => ({ ...m, [player]: null }));
-              shoutTimersRef.current[player] = null;
-            }, 3000) as unknown as number;
-          }
         }
       }
       return next;
@@ -655,13 +498,6 @@ export function useTrucMatch(options: UseTrucMatchOptions = {}) {
       return next;
     });
     for (const p of [0, 1, 2, 3] as PlayerId[]) clearShoutTimer(p);
-    setLastShoutByPlayer({ 0: null, 1: null, 2: null, 3: null });
-    setShoutLabelByPlayer({ 0: null, 1: null, 2: null, 3: null });
-    setAcceptedShoutByPlayer({ 0: false, 1: false, 2: false, 3: false });
-    setShoutFamilyByPlayer({ 0: null, 1: null, 2: null, 3: null });
-    setEnvitOutcomeByPlayer({ 0: null, 1: null, 2: null, 3: null });
-    setEnvitShoutByPlayer({ 0: null, 1: null, 2: null, 3: null });
-    setEnvitShoutLabelByPlayer({ 0: null, 1: null, 2: null, 3: null });
     consultAdviceRef.current.clear();
     consultStartedRef.current.clear();
     clearConsultTimers();
@@ -680,13 +516,6 @@ export function useTrucMatch(options: UseTrucMatchOptions = {}) {
     if (forced !== null) forcedNextDealerRef.current = null;
     setMatch(createMatch({ targetCama: initialTargetCama, targetCames: initialTargetCames, firstDealer }));
     for (const p of [0, 1, 2, 3] as PlayerId[]) clearShoutTimer(p);
-    setLastShoutByPlayer({ 0: null, 1: null, 2: null, 3: null });
-    setShoutLabelByPlayer({ 0: null, 1: null, 2: null, 3: null });
-    setAcceptedShoutByPlayer({ 0: false, 1: false, 2: false, 3: false });
-    setShoutFamilyByPlayer({ 0: null, 1: null, 2: null, 3: null });
-    setEnvitOutcomeByPlayer({ 0: null, 1: null, 2: null, 3: null });
-    setEnvitShoutByPlayer({ 0: null, 1: null, 2: null, 3: null });
-    setEnvitShoutLabelByPlayer({ 0: null, 1: null, 2: null, 3: null });
     consultAdviceRef.current.clear();
     consultStartedRef.current.clear();
     clearConsultTimers();
