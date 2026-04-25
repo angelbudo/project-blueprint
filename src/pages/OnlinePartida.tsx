@@ -9,6 +9,7 @@ import { useRoomChat } from "@/online/useRoomChat";
 import { useRoomTextChat } from "@/online/useRoomTextChat";
 import { legalActions } from "@/game/engine";
 import { computeShoutDisplay } from "@/game/shoutDisplay";
+import { useShoutFlash } from "@/game/useShoutFlash";
 import type { Action, MatchState, PlayerId } from "@/game/types";
 import type { ChatPhraseId } from "@/game/phrases";
 import { TrucBoard } from "@/components/truc/TrucBoard";
@@ -63,6 +64,8 @@ function PartidaOnline() {
     () => state ? computeShoutDisplay(state) : null,
     [state],
   );
+  // Flash transitori del cant (1.6s), derivat del log. Mateix hook que offline.
+  const shoutFlash = useShoutFlash(state);
 
   const seatNames = useMemo(() => {
     if (mySeat == null || !players || !seatKinds) {
@@ -191,7 +194,7 @@ function PartidaOnline() {
       match={state as MatchState}
       humanActions={myActions}
       dispatch={dispatchAction}
-      shoutFlash={null}
+      shoutFlash={shoutFlash}
       lastShoutByPlayer={display!.lastShoutByPlayer}
       shoutLabelByPlayer={display!.shoutLabelByPlayer}
       acceptedShoutByPlayer={display!.acceptedShoutByPlayer}
