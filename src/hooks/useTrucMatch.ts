@@ -98,6 +98,9 @@ interface UseTrucMatchOptions {
    * per a forçar un flush del perfil del jugador i recalcular el tuning del
    * bot abans de la ronda següent. */
   onRoundEnd?: () => void;
+  /** Si és true, congela qualsevol acció dels bots (no programa torns ni
+   *  passa a nova ronda). El jugador humà també queda bloquejat per la UI. */
+  paused?: boolean;
 }
 
 const SAVE_KEY = "truc:save:v2";
@@ -190,6 +193,8 @@ export function useTrucMatch(options: UseTrucMatchOptions = {}) {
   useEffect(() => { trackProfileRef.current = options.trackProfile; }, [options.trackProfile]);
   const onRoundEndRef = useRef(options.onRoundEnd);
   useEffect(() => { onRoundEndRef.current = options.onRoundEnd; }, [options.onRoundEnd]);
+  const pausedRef = useRef<boolean>(options.paused ?? false);
+  useEffect(() => { pausedRef.current = options.paused ?? false; }, [options.paused]);
   const lastRoundsRef = useRef<number>(-1);
   const gameStartedTrackedRef = useRef<number>(-1);
 
@@ -666,6 +671,7 @@ export function useTrucMatch(options: UseTrucMatchOptions = {}) {
       window.clearTimeout(timerRef.current);
       timerRef.current = null;
     }
+    if (pausedRef.current) return;
     const r = match.round;
     if (r.phase === "game-end" || r.phase === "round-end") return;
 
@@ -1170,9 +1176,10 @@ export function useTrucMatch(options: UseTrucMatchOptions = {}) {
     return () => {
       if (timerRef.current) window.clearTimeout(timerRef.current);
     };
-  }, [match, dispatch]);
+  }, [match, dispatch, options.paused]);
 
   useEffect(() => {
+    if (pausedRef.current) return;
     if (match.round.phase === "round-end") {
       // Si l'envit ha estat volgut, donem 3s extra per a la revelació de
       // les cartes d'envit abans de començar la nova mà.
@@ -1182,7 +1189,7 @@ export function useTrucMatch(options: UseTrucMatchOptions = {}) {
       const t = window.setTimeout(() => newRound(), delay);
       return () => window.clearTimeout(t);
     }
-  }, [match.round.phase, match.history, newRound]);
+  }, [match.round.phase, match.history, newRound, options.paused]);
 
   const humanActions = legalActions(match, HUMAN);
 

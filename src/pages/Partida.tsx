@@ -47,6 +47,7 @@ function PartidaClient() {
   const { tuning: rawTuning, track, flush } = usePlayerProfile(deviceId || null, settings.botDifficulty, settings.botHonesty);
   const tuning = applyDifficulty(rawTuning, settings.botDifficulty);
   const bluffRate = bluffRateOf(settings.botHonesty);
+  const [paused, setPaused] = useState(false);
   const {
     match,
     dispatch,
@@ -79,6 +80,7 @@ function PartidaClient() {
     // El hook recarrega el perfil i recalcula `tuning`, que entra en vigor
     // immediatament per a les decisions dels bots de la ronda següent.
     onRoundEnd: () => { void flush(); },
+    paused,
   });
 
   const r = match.round;
@@ -282,6 +284,8 @@ function PartidaClient() {
       onAbandon={handleAbandon}
       dealKey={computedDealKey}
       turnTimeoutSec={settings.turnTimeoutSec}
+      paused={paused}
+      onPauseToggle={(next) => setPaused(next)}
     />
   );
 }
