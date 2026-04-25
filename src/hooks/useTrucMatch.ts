@@ -195,6 +195,33 @@ export function useTrucMatch(options: UseTrucMatchOptions = {}) {
   useEffect(() => { onRoundEndRef.current = options.onRoundEnd; }, [options.onRoundEnd]);
   const pausedRef = useRef<boolean>(options.paused ?? false);
   useEffect(() => { pausedRef.current = options.paused ?? false; }, [options.paused]);
+
+  // Quan s'activa la pausa, cancel·la immediatament tots els timers
+  // pendents dels bots (acció principal, consultes, espera del company,
+  // espera del 2n jugador). Així cap acció programada s'executarà entre
+  // la pausa i la represa.
+  useEffect(() => {
+    if (!options.paused) return;
+    if (timerRef.current) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    for (const id of consultTimersRef.current) window.clearTimeout(id);
+    consultTimersRef.current = [];
+    consultInFlightRef.current.clear();
+    consultStartedRef.current.clear();
+    if (pendingHumanAnswerRef.current) {
+      window.clearTimeout(pendingHumanAnswerRef.current.timer);
+      pendingHumanAnswerRef.current = null;
+    }
+    const w = pendingSecondWaitRef.current;
+    if (w) {
+      window.clearTimeout(w.timer);
+      if (w.partnerBotTimer) window.clearTimeout(w.partnerBotTimer);
+      pendingSecondWaitRef.current = null;
+    }
+  }, [options.paused]);
+
   const lastRoundsRef = useRef<number>(-1);
   const gameStartedTrackedRef = useRef<number>(-1);
 
