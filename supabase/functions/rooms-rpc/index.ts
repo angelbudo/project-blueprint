@@ -634,6 +634,22 @@ const handlers: Record<string, (data: any) => Promise<unknown>> = {
       await admin.from("rooms").update({ status: "abandoned", updated_at: new Date().toISOString() }).eq("id", room.id);
       return { ok: true, abandoned: true };
     }
+    // Si la partida està en marxa i ja no queda cap humà online, tanquem la sala
+    // perquè quede lliure per a una nova partida.
+    if (room.status === "playing") {
+      const { data: humansOnline } = await admin
+        .from("room_players")
+        .select("device_id")
+        .eq("room_id", room.id)
+        .eq("is_online", true);
+      if (!humansOnline || humansOnline.length === 0) {
+        await admin
+          .from("rooms")
+          .update({ status: "abandoned", updated_at: new Date().toISOString() })
+          .eq("id", room.id);
+        return { ok: true, abandoned: true };
+      }
+    }
     return { ok: true };
   },
 
