@@ -193,6 +193,8 @@ export function useTrucMatch(options: UseTrucMatchOptions = {}) {
   useEffect(() => { trackProfileRef.current = options.trackProfile; }, [options.trackProfile]);
   const onRoundEndRef = useRef(options.onRoundEnd);
   useEffect(() => { onRoundEndRef.current = options.onRoundEnd; }, [options.onRoundEnd]);
+  const pausedRef = useRef<boolean>(options.paused ?? false);
+  useEffect(() => { pausedRef.current = options.paused ?? false; }, [options.paused]);
   const lastRoundsRef = useRef<number>(-1);
   const gameStartedTrackedRef = useRef<number>(-1);
 
